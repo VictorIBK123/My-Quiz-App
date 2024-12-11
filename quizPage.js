@@ -1,14 +1,17 @@
 import React ,{useContext, useEffect, useState, useRef}from "react";
+import * as FileSystem from 'expo-file-system'
 import { View,Text, Pressable, FlatList, TouchableOpacity, TouchableHighlight, Button } from "react-native";
 import { myContext } from "./myContext";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Animated,{ useAnimatedStyle, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
+import { BackHandler } from "react-native";
 export default function QuizPage({navigation, route}){
     const [showQuitMenu, setShowQuitMenu] = useState(false)
     const [score, setScore] = useState(0)
     const [buttonDisabled, setButtonDisabled] = useState(false)
-    const { answerValidation,setAnswerValidation,background,setBackground, setMyColor, myColor, allDurationMin, setAllDurationMin, allDurationHr,setAllDurationHr} = useContext(myContext)
+    const { quizId, setQuizId,answerValidation,setAnswerValidation,background,setBackground, setMyColor, myColor, allDurationMin, setAllDurationMin, allDurationHr,setAllDurationHr} = useContext(myContext)
     const [sureSubmitShow, setSureSubmitShow] = useState(false)
+    const [totalTimeInSec, setTotalTimeInSec] = useState((route.params.durationHr*3600)+(route.params.durationMin*60))
     const [quizSubmitted, setQuizSubmitted] = useState(false)
     const [timeUsedHr, setTimeUsedHr] =useState(0)
     const [timeUsedMin, setTimeUsedMin] = useState(0)
@@ -24,8 +27,71 @@ export default function QuizPage({navigation, route}){
     const [displayVerify, setDisplayVerify] =useState(false)
     const [validateEach, setValidateEach] =useState(null)
     const [questionsDetails, setQuestionsDetails]=useState(route.params.questionDetails);
+
+    useEffect(()=>{
+        const backPressed =()=>{
+            setShowQuitMenu(true)
+            return(true)
+        }
+        const backHandler = BackHandler.addEventListener("hardwareBackPress", backPressed)
+        return ()=> backHandler.remove()
+    },[])
+    useEffect(()=>{
+// Saving questionHistory
+(async()=>{
+            
+    if (quizSubmitted){
+        var toWrite;
+        var content;
+        const url = `${FileSystem.documentDirectory}quizhistory.json`
+        try {
+            const info = await FileSystem.getInfoAsync(url)
+            if (route.params.category=='Quiz History'){
+                content = await FileSystem.readAsStringAsync(url)
+                content =JSON.parse(content)
+                var scoreToStore;
+                var attempted;
+                var id;
+                var filteredContent = content.filter((element)=>{
+                    if (element.quizId == route.params.quizId){
+                        scoreToStore = score > route.params.score? score : route.params.score
+                    }
+                    return (element.quizId !== route.params.quizId)
+                })
+                contentToStore = filteredContent.concat(questionsDetails.map((element, index)=>{
+                    return({...element, 'chosen':-1, onQuestion: false, verified: false, quizId:route.params.quizId, score:scoreToStore,attempted: route.params.attempted+1, scategory: route.params.category, validate: route.params.validate==='each'? 'each':'all', durationHr: route.params.durationHr, durationMin: route.params.durationMin})
+                }))
+                await FileSystem.writeAsStringAsync(url, JSON.stringify(contentToStore))
+            }
+            else if (info.exists){
+                console.log('file exists')
+                content = await FileSystem.readAsStringAsync(url)
+                console.log(route.params.durationMin)
+                // joins data read from file with new questions (data) generated
+                content = JSON.parse(content).concat(questionsDetails.map((element, index)=>{
+                    return({...element, 'chosen':-1, onQuestion: false, verified: false, quizId:quizId+1, score,attempted: 1, scategory: route.params.category, validate: route.params.validate==='each'? 'each':'all', durationHr: route.params.durationHr, durationMin: route.params.durationMin})
+                }))
+                await FileSystem.writeAsStringAsync(url, JSON.stringify(content))
+                setQuizId(quizId+1)
+            }
+            else{
+                // same thing as what questionsDetails is set to
+                toWrite = JSON.stringify(questionsDetails.map((element, index)=>{
+                        return({...element, 'chosen':-1, onQuestion: false, verified: false, quizId: quizId+1, score,attempted:1, scategory: route.params.category, validate: route.params.validate==='each'? 'each':'all', durationHr: route.params.durationHr, durationMin: route.params.durationMin})
+                }))
+                console.log(toWrite)
+                await FileSystem.writeAsStringAsync(url, toWrite)
+                setQuizId(quizId+1)
+            }
+            
+        } catch (error) {
+            // catch error
+        }}
+})()
+    },[quizSubmitted])
     useEffect(()=>{
         setQuestionsDetails(questionsDetails.map((element, index)=>{
+            // Since the first quiz index to be displayed is 0, so onQuestion automatically sets to true
             if (index==0){
                 return({...element, 'chosen':-1, onQuestion: true, verified: false})
             }
@@ -35,6 +101,7 @@ export default function QuizPage({navigation, route}){
         }))
         setValidateEach(route.params.validate==='each')
     },[])
+
     useEffect(()=>{
         if (questionsDetails[questionOnScreenIndex].verified == true){
             setButtonDisabled(true)
@@ -54,53 +121,35 @@ export default function QuizPage({navigation, route}){
     
     useEffect(()=>{
         timeCounter.current =setInterval(()=>{
-            setTimeLeftSec((prev)=>{
-                if (prev>0){
-                    return(prev-1)
+            setTotalTimeInSec((prev)=>{
+                if (prev<=0){
+                    clearInterval(timeCounter.current)
+                    submissionHandler('timeUp')
                 }
-                else{
-                    setTimeLeftMin((prev)=>{
-                        if (prev>0){
-                            return (prev-1)
-                        }
-                        else{
-                            setTimeLeftHr((prev)=>prev-1)
-                            return (59)
-                        }
-                    })
-                    return (59)
-                }
-            })
-            setTimeUsedSec((prev)=>{
-                if (prev <59){
-                    return(prev+1)
-                }
-                else{
-                    setTimeUsedMin((prev)=>{
-                        if (prev<59){
-                            return (prev+1)
-                        }
-                        else {
-                            setTimeUsedHr((prev)=>prev+1)
-                            return(0)
-                        }
-                    })
-                    return (0)
-                }
-            })
+                console.log(prev)
+                setTimeLeftSec(prev%60)
+                setTimeLeftMin(Math.floor(prev/60)%60)
+                setTimeLeftHr(Math.floor(prev/3600))
+
+                // setting the seconds used
+                setTimeUsedSec(((route.params.durationHr*3600)+(route.params.durationMin*60) -prev)%60)
+                setTimeUsedMin(route.params.durationMin- Math.ceil(prev/60)%60)
+                setTimeUsedHr(Math.ceil(route.params.durationHr - (prev/3600))) 
+                return(prev-1)})
+            // setting the seconds left
             
-        }, 1000);
+            }, 1000)
         return () => {
             clearInterval(timeCounter.current);
           };
     },[])
     
-    useEffect(()=>{
-        if (timeUsedHr===allDurationHr && timeUsedMin===allDurationMin && timeUsedSec ===0){
-            clearInterval(timeCounter.current) 
-            submissionHandler('timeUp')
-        }
-    },[timeLeftHr, timeLeftMin, timeLeftSec])
+    // useEffect(()=>{
+    //     if (timeUsedHr===allDurationHr && timeUsedMin===allDurationMin && timeUsedSec ===0){
+    //         clearInterval(timeCounter.current) 
+    //         submissionHandler('timeUp')
+    // //     }
+    // },[timeLeftHr, timeLeftMin, timeLeftSec])
     for (var i=1; i<=questionsDetails.length; i++){
         questionNumberList.push({questionNumber:i.toString(), key:i})
     }
@@ -167,7 +216,7 @@ export default function QuizPage({navigation, route}){
         }
         else if (shouldQuit==='yes'){
             setShowQuitMenu(false)
-            navigation.navigate('Quiz App')
+            navigation.navigate('Quiz')
         }
     }
     useEffect(()=>{
@@ -184,7 +233,7 @@ export default function QuizPage({navigation, route}){
                         <Text style={{color:background, fontSize:15}}>Duration:</Text>
                     </View>
                     <View >
-                        <Text style={{color:'#aaaaff'}}>{(()=>{if (allDurationHr.toString().length ==1){return(`0${allDurationHr}`)}else{return(allDurationHr)}})()} :{(()=>{if (allDurationMin.toString().length ==1){return(`0${allDurationMin}`)}else{return(allDurationMin)}})()} : 00</Text>
+                        <Text style={{color:'#aaaaff'}}>{(()=>{if (route.params.durationHr.toString().length ==1){return(`0${route.params.durationHr}`)}else{return(route.params.durationHr)}})()} :{(()=>{if (route.params.durationMin.toString().length ==1){return(`0${route.params.durationMin}`)}else{return(route.params.durationMin)}})()} : 00</Text>
                     </View>
                 </View>
                 <View style={{flex:1/4,marginLeft:5, borderRightWidth:1, borderColor:background}}>

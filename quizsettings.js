@@ -8,7 +8,7 @@ import { ActivityIndicator } from "react-native";
 import * as Progress from 'react-native-progress'
 
 export default function QuizSettings({navigation, route}) {
-    const {allQuestionType, setAllQuestionType,allDifficultyLevel, setAllDifficultyLevel,allTotalQuestions, setallTotalQuestions,answerValidation,setAnswerValidation,background,setBackground, setMyColor, myColor,allDurationMin, setAllDurationMin,allDurationHr, setAllDurationHr } = useContext(myContext)
+    const {quizId, setQuizId,allQuestionType, setAllQuestionType,allDifficultyLevel, setAllDifficultyLevel,allTotalQuestions, setallTotalQuestions,answerValidation,setAnswerValidation,background,setBackground, setMyColor, myColor,allDurationMin, setAllDurationMin,allDurationHr, setAllDurationHr } = useContext(myContext)
     const [durationMin, setDurationMin] =useState(allDurationMin)
     const [durationHr, setDurationHr] =useState(allDurationHr)
     const [difficultyLevel, setDifficultyLevel] = useState(allDifficultyLevel)
@@ -53,27 +53,27 @@ export default function QuizSettings({navigation, route}) {
             'category' is the category of the particular question according to the categories I gave you
             'explanation' is just a brief explanation of the answer or how you got the answer
             The difficulty of the questions will depend on the difficulty level I put in the prompt I gave
-            Make sure your question are random and must not include most of the previous ones
-            The number of questions for each category should be approximately equal to one another but the total number of questions you generated must be exactly equal to the totalQuestions given in the prompt 
-            You must generated more than the questions you are asked to generate and must not generate less
+            Make sure your questions are random and must not include the previous ones you generated even in previous chats
+            The number of questions for each category should be equal to one another but the total number of questions you generated must be exactly equal to the totalQuestions given in the prompt 
+            You must not generated more than the questions you are asked to generate and must not generate less
             `,
             generationConfig:{
                 temperature:2.0
             } });
+            const chat = model.startChat();
             const prompt = `Generate 5 total questions of categories ${route.params.innerCategoriesSelected} with difficulty level ${difficultyLevel} and type ${questionType} questions
-        Note: that the total number of questions you generated is not less than 5 and not greater than 5  `;
+        Note: that the total number of questions you generated is not less than 5 and not greater than 5`;
             var tempResult ;
             if (route.params.category!='Quiz History'){
                 try {
                     for (var i=1; i<= parseInt(totalQuestions/5); i++){
-                            tempResult  = await model.generateContent(prompt);
+                            tempResult  = await chat.sendMessage(prompt);
                             result = result.concat(JSON.parse(tempResult.response.text().replaceAll("```json\n","").replaceAll("\n```","")))
                             setProgress((5*i)/totalQuestions)
                     }
                 } catch (error) {
                     setDisableGenerateButt(false)
                 }
-                console.log(result.length)
                 questionDetails = result
                 setDisableGenerateButt(false)
                 navigation.navigate('quizPage', {
@@ -144,15 +144,10 @@ export default function QuizSettings({navigation, route}) {
             if (questionType=='multichoice'){
                 setQuestionType('true&false')
             } 
-            else if (questionType == 'true&false'){
-                setQuestionType('fillInBlank')
-            }
+            
         }
         else if(action==='decrease'){
-            if (questionType=='fillInBlank'){
-                setQuestionType('true&false')
-            } 
-            else if (questionType == 'true&false'){
+            if (questionType == 'true&false'){
                 setQuestionType('multichoice')
             }
         }
@@ -179,7 +174,7 @@ export default function QuizSettings({navigation, route}) {
                 setDurationMin(durationMin+5)
             }
         }
-        else if (action =='decrease'){
+        else if (action =='decrease' && (durationHr!==0 || durationMin!=0)){
             if (durationMin==0){
                 setDurationHr(durationHr-1)
                 setDurationMin(55) 

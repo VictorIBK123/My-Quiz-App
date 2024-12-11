@@ -1,6 +1,7 @@
 // import './gesture-handler';// compulspry at the entry point
 import { NavigationContainer } from '@react-navigation/native';
-import React, { useState } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from 'react'
 import Home from './home';
 import TakeQuiz from './takeQuiz';
 import Multiplayer from './multiplayer';
@@ -24,9 +25,40 @@ export default function App(){
   const [allDifficultyLevel, setAllDifficultyLevel] = useState('easy')
   const [allDurationMin, setAllDurationMin] = useState(10)
   const [allDurationHr, setAllDurationHr] = useState(0)
+  const [quizId, setQuizId] = useState(0)
   const [answerValidation, setAnswerValidation] =useState('all')
+  var quizData;
+  useEffect(()=>{
+    (async()=>{
+      try {
+        quizData = await AsyncStorage.getItem('quizdata')
+        quizData = JSON.parse(quizData)
+        setBackground(quizData.background)
+        setMyColor(quizData.myColor)
+        setallTotalQuestions(quizData.allTotalQuestions)
+        setAllQuestionType(quizData.allQuestionType)
+        setAllDifficultyLevel(quizData.allDifficultyLevel)
+        setAllDurationMin(quizData.allDurationMin)
+        setAllDurationHr(quizData.allDurationHr)
+        setQuizId(quizData.quizId)
+        setAnswerValidation(quizData.answerValidation)
+      }
+      catch(error){
+        await AsyncStorage.setItem('quizdata', JSON.stringify({background: background, myColor: myColor, allTotalQuestions: allTotalQuestions, 
+        allQuestionType: allQuestionType, allDifficultyLevel: allDifficultyLevel, allDurationMin: allDurationMin, 
+        allDurationHr: allDurationHr, quizId: quizId,answerValidation: answerValidation}))
+      }
+    })()
+  },[])
+    useEffect(()=>{
+      (async()=>{
+        await AsyncStorage.setItem('quizdata', JSON.stringify({background: background, myColor: myColor, allTotalQuestions: allTotalQuestions, 
+          allQuestionType: allQuestionType, allDifficultyLevel: allDifficultyLevel, allDurationMin: allDurationMin, 
+          allDurationHr: allDurationHr, quizId: quizId,answerValidation: answerValidation}))
+      })()
+    },[{quizId,allQuestionType, allDifficultyLevel, allTotalQuestions, answerValidation,background, myColor, allDurationMin,allDurationHr}])
   return(
-      <myContext.Provider value={{allQuestionType, setAllQuestionType,allDifficultyLevel, setAllDifficultyLevel,allTotalQuestions, setallTotalQuestions,answerValidation,setAnswerValidation,background, setBackground, myColor, setMyColor,allDurationMin, setAllDurationMin,allDurationHr, setAllDurationHr }}>
+      <myContext.Provider value={{quizId, setQuizId,allQuestionType, setAllQuestionType,allDifficultyLevel, setAllDifficultyLevel,allTotalQuestions, setallTotalQuestions,answerValidation,setAnswerValidation,background, setBackground, myColor, setMyColor,allDurationMin, setAllDurationMin,allDurationHr, setAllDurationHr }}>
         <StatusBar backgroundColor={'black'}/>
         <NavigationContainer>
           <Stack.Navigator  screenOptions={{headerTitleAlign: 'center',headerStyle: {height: 60, backgroundColor: myColor}, headerTintColor: background}}>

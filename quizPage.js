@@ -9,9 +9,10 @@ export default function QuizPage({navigation, route}){
     const [showQuitMenu, setShowQuitMenu] = useState(false)
     const [score, setScore] = useState(0)
     const [buttonDisabled, setButtonDisabled] = useState(false)
-    const { quizId, setQuizId,answerValidation,setAnswerValidation,background,setBackground, setMyColor, myColor, allDurationMin, setAllDurationMin, allDurationHr,setAllDurationHr} = useContext(myContext)
+    const { overallPerformance, setOverallPerformance, quizId, setQuizId,answerValidation,setAnswerValidation,background,setBackground, setMyColor, myColor, allDurationMin, setAllDurationMin, allDurationHr,setAllDurationHr} = useContext(myContext)
     const [sureSubmitShow, setSureSubmitShow] = useState(false)
-    const [totalTimeInSec, setTotalTimeInSec] = useState((route.params.durationHr*3600)+(route.params.durationMin*60))
+    const [totalTimeLeftInSec, setTotalTimeLeftInSec] = useState((route.params.durationHr*3600)+(route.params.durationMin*60))
+    const [totalTimeUsedInSec, setTotalTimeUsedInSec] = useState(0)
     const [quizSubmitted, setQuizSubmitted] = useState(false)
     const [timeUsedHr, setTimeUsedHr] =useState(0)
     const [timeUsedMin, setTimeUsedMin] = useState(0)
@@ -59,7 +60,7 @@ export default function QuizPage({navigation, route}){
                     return (element.quizId !== route.params.quizId)
                 })
                 contentToStore = filteredContent.concat(questionsDetails.map((element, index)=>{
-                    return({...element, 'chosen':-1, onQuestion: false, verified: false, quizId:route.params.quizId, score:scoreToStore,attempted: route.params.attempted+1, scategory: route.params.category, validate: route.params.validate==='each'? 'each':'all', durationHr: route.params.durationHr, durationMin: route.params.durationMin})
+                    return({...element, 'chosen':-1, onQuestion: false, verified: false, quizId:route.params.quizId, score:scoreToStore,attempted: route.params.attempted+1, scategory: route.params.putCategory, validate: route.params.validate==='each'? 'each':'all', durationHr: route.params.durationHr, durationMin: route.params.durationMin})
                 }))
                 await FileSystem.writeAsStringAsync(url, JSON.stringify(contentToStore))
             }
@@ -121,21 +122,20 @@ export default function QuizPage({navigation, route}){
     
     useEffect(()=>{
         timeCounter.current =setInterval(()=>{
-            setTotalTimeInSec((prev)=>{
+            setTotalTimeLeftInSec((prev)=>{
                 if (prev<=0){
                     clearInterval(timeCounter.current)
                     submissionHandler('timeUp')
+                    return (0)
                 }
-                console.log(prev)
-                setTimeLeftSec(prev%60)
-                setTimeLeftMin(Math.floor(prev/60)%60)
-                setTimeLeftHr(Math.floor(prev/3600))
-
-                // setting the seconds used
-                setTimeUsedSec(((route.params.durationHr*3600)+(route.params.durationMin*60) -prev)%60)
-                setTimeUsedMin(route.params.durationMin- Math.ceil(prev/60)%60)
-                setTimeUsedHr(Math.ceil(route.params.durationHr - (prev/3600))) 
-                return(prev-1)})
+                return (prev-1)
+            })
+            setTotalTimeUsedInSec((prev)=>{
+                if (prev==(route.params.durationHr*3600)+(route.params.durationMin*60)){
+                    return (0)
+                }
+                return (prev+1)
+            })
             // setting the seconds left
             
             }, 1000)
@@ -143,13 +143,20 @@ export default function QuizPage({navigation, route}){
             clearInterval(timeCounter.current);
           };
     },[])
+    useEffect(()=>{
+        // converting total sec to seconds
+        setTimeLeftSec(totalTimeLeftInSec%60)
+        setTimeUsedSec(totalTimeUsedInSec%60)
+
+        // converting total sec to minutes
+        setTimeLeftMin(Math.floor(totalTimeLeftInSec/60)%60)
+        setTimeUsedMin(Math.floor(totalTimeUsedInSec/60)%60)
+
+        // converting total sec to hr
+        setTimeLeftHr(Math.floor(totalTimeLeftInSec/3600))
+        setTimeUsedHr(Math.floor(totalTimeUsedInSec/3600))
+    },[totalTimeLeftInSec, totalTimeUsedInSec])
     
-    // useEffect(()=>{
-    //     if (timeUsedHr===allDurationHr && timeUsedMin===allDurationMin && timeUsedSec ===0){
-    //         clearInterval(timeCounter.current) 
-    //         submissionHandler('timeUp')
-    // //     }
-    // },[timeLeftHr, timeLeftMin, timeLeftSec])
     for (var i=1; i<=questionsDetails.length; i++){
         questionNumberList.push({questionNumber:i.toString(), key:i})
     }
@@ -181,6 +188,8 @@ export default function QuizPage({navigation, route}){
                     tempScore+=1
                 }
                 setScore(tempScore)
+                setOverallPerformance(overallPerformance!=='None'? ((overallPerformance + (tempScore* 100/questionsDetails.length))/2): tempScore*100/questionsDetails.length)
+                console.log(overallPerformance!=='None'? ((overallPerformance + (tempScore* 100/questionsDetails.length))/2): tempScore*100/questionsDetails.length)
             })
             setQuizSubmitted(true)
             navigation.setOptions({headerRight: ()=>null})
@@ -197,6 +206,8 @@ export default function QuizPage({navigation, route}){
             questionsDetails.forEach((element)=>{
                 if (element['answer'] === element['chosen']){
                     setScore(score+1)
+                    setOverallPerformance(overallPerformance!=='None'? ((overallPerformance + (tempScore* 100/questionsDetails.length))/2): tempScore*100/questionsDetails.length)
+                    console.log(overallPerformance!=='None'? ((overallPerformance + (tempScore* 100/questionsDetails.length))/2): tempScore*100/questionsDetails.length)
                 }
             })
             setQuizSubmitted(true)
@@ -343,7 +354,7 @@ export default function QuizPage({navigation, route}){
                     <Text style={{color:background, fontSize:23}}>Your score: <Text>{score}</Text> of <Text>{questionsDetails.length}</Text></Text>
                 </View>
                 <View style={{marginBottom:5}}>
-                    <TouchableOpacity onPress={()=>{navigation.navigate('quizSolutions', {details: questionsDetails, category: route.params.category})}} style={{backgroundColor:background, borderRadius:4}}>
+                    <TouchableOpacity onPress={()=>{navigation.navigate('quizSolutions', {fromWhere: 'quizPage', details: questionsDetails, category: route.params.category})}} style={{backgroundColor:background, borderRadius:4}}>
                         <Text  style={{color: myColor, padding:5, fontWeight: 'bold'}}>Click to view quiz solutions and other details</Text>
                     </TouchableOpacity>
                 </View>

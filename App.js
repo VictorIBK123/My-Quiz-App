@@ -16,6 +16,7 @@ import QuizPage from './quizPage';
 import QuizSolutions from './quizSolutions';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'react-native';
+import Rate from './rate';
 export default function App(){
   const Stack = createStackNavigator()
   const [background, setBackground] = useState('white')
@@ -27,10 +28,14 @@ export default function App(){
   const [allDurationHr, setAllDurationHr] = useState(0)
   const [quizId, setQuizId] = useState(0)
   const [answerValidation, setAnswerValidation] =useState('all')
+  const [overallPerformance, setOverallPerformance] = useState('None')
   var quizData;
+  var quizDataPerf;
   useEffect(()=>{
     (async()=>{
       try {
+        quizDataPerf = await AsyncStorage.getItem('quizDataPerformance')
+        quizDataPerf = JSON.parse(quizDataPerf)
         quizData = await AsyncStorage.getItem('quizdata')
         quizData = JSON.parse(quizData)
         setBackground(quizData.background)
@@ -42,8 +47,10 @@ export default function App(){
         setAllDurationHr(quizData.allDurationHr)
         setQuizId(quizData.quizId)
         setAnswerValidation(quizData.answerValidation)
+        setOverallPerformance(quizDataPerf.perf)
       }
       catch(error){
+        await AsyncStorage.setItem('quizDataPerformance', JSON.stringify({perf: overallPerformance}))
         await AsyncStorage.setItem('quizdata', JSON.stringify({background: background, myColor: myColor, allTotalQuestions: allTotalQuestions, 
         allQuestionType: allQuestionType, allDifficultyLevel: allDifficultyLevel, allDurationMin: allDurationMin, 
         allDurationHr: allDurationHr, quizId: quizId,answerValidation: answerValidation}))
@@ -55,10 +62,11 @@ export default function App(){
         await AsyncStorage.setItem('quizdata', JSON.stringify({background: background, myColor: myColor, allTotalQuestions: allTotalQuestions, 
           allQuestionType: allQuestionType, allDifficultyLevel: allDifficultyLevel, allDurationMin: allDurationMin, 
           allDurationHr: allDurationHr, quizId: quizId,answerValidation: answerValidation}))
+        await AsyncStorage.setItem('quizDataPerformance', JSON.stringify({perf: overallPerformance}))
       })()
-    },[{quizId,allQuestionType, allDifficultyLevel, allTotalQuestions, answerValidation,background, myColor, allDurationMin,allDurationHr}])
+    },[{overallPerformance, quizId,allQuestionType, allDifficultyLevel, allTotalQuestions, answerValidation,background, myColor, allDurationMin,allDurationHr}])
   return(
-      <myContext.Provider value={{quizId, setQuizId,allQuestionType, setAllQuestionType,allDifficultyLevel, setAllDifficultyLevel,allTotalQuestions, setallTotalQuestions,answerValidation,setAnswerValidation,background, setBackground, myColor, setMyColor,allDurationMin, setAllDurationMin,allDurationHr, setAllDurationHr }}>
+      <myContext.Provider value={{overallPerformance, setOverallPerformance, quizId, setQuizId,allQuestionType, setAllQuestionType,allDifficultyLevel, setAllDifficultyLevel,allTotalQuestions, setallTotalQuestions,answerValidation,setAnswerValidation,background, setBackground, myColor, setMyColor,allDurationMin, setAllDurationMin,allDurationHr, setAllDurationHr }}>
         <StatusBar backgroundColor={'black'}/>
         <NavigationContainer>
           <Stack.Navigator  screenOptions={{headerTitleAlign: 'center',headerStyle: {height: 60, backgroundColor: myColor}, headerTintColor: background}}>
@@ -73,6 +81,7 @@ export default function App(){
             <Stack.Screen component={QuizPage} name='quizPage' options={{title: 'Quiz', headerLeft:null}}/>
             <Stack.Screen component={QuizSolutions} name='quizSolutions' options={{title: 'Quiz Solutions', headerTitleAlign:'left'}}/>
             <Stack.Screen component={QuizHistory} name='quizhistory' options={{title: 'Quiz History'}}/>
+            <Stack.Screen component={Rate} name ='rate' options={{title: 'Ratings', headerTitleAlign: 'center'}}/> 
           </Stack.Navigator>
         </NavigationContainer>
       </myContext.Provider>

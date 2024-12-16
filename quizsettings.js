@@ -6,6 +6,7 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ActivityIndicator } from "react-native";
 import * as Progress from 'react-native-progress'
+import * as Network from 'expo-network'
 
 export default function QuizSettings({navigation, route}) {
     const {quizId, setQuizId,allQuestionType, setAllQuestionType,allDifficultyLevel, setAllDifficultyLevel,allTotalQuestions, setallTotalQuestions,answerValidation,setAnswerValidation,background,setBackground, setMyColor, myColor,allDurationMin, setAllDurationMin,allDurationHr, setAllDurationHr } = useContext(myContext)
@@ -64,14 +65,17 @@ export default function QuizSettings({navigation, route}) {
             const prompt = `Generate 5 total questions of categories ${route.params.innerCategoriesSelected} with difficulty level ${difficultyLevel} and type ${questionType} questions
         Note: that the total number of questions you generated is not less than 5 and not greater than 5`;
             var tempResult ;
+            var connectionInfo=0;
             if (route.params.category!='Quiz History'){
                 try {
                     for (var i=1; i<= parseInt(totalQuestions/5); i++){
-                            tempResult  = await chat.sendMessage(prompt);
-                            result = result.concat(JSON.parse(tempResult.response.text().replaceAll("```json\n","").replaceAll("\n```","")))
-                            setProgress((5*i)/totalQuestions)
+                        connectionInfo = await Network.getNetworkStateAsync()
+                        tempResult  = await chat.sendMessage(prompt);
+                        result = result.concat(JSON.parse(tempResult.response.text().replaceAll("```json\n","").replaceAll("\n```","")))
+                        setProgress((5*i)/totalQuestions)
                     }
                 } catch (error) {
+                    
                     setDisableGenerateButt(false)
                 }
                 questionDetails = result

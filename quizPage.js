@@ -40,7 +40,6 @@ export default function QuizPage({navigation, route}){
     useEffect(()=>{
 // Saving questionHistory
 (async()=>{
-            
     if (quizSubmitted){
         var toWrite;
         var content;

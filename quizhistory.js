@@ -73,11 +73,6 @@ export default function QuizHistory({route, navigation}){
             }
         })()
     },[])
-    // useEffect(()=>{
-    //     (async()=>{
-            
-    //     })()
-    // },[renderedDetails])
     const takeQuizAgain =(score, id, val, hr, min, dif, opt, attempted, category)=>{
         var questionDetails = fileContentArray.filter((e)=>e.quizId==id).map((element)=>({question: element.question, options: element.options, answer: element.answer, difficultyLevel: element.difficultyLevel, category: element.category, explanation: element.explanation}))
         navigation.navigate('quizPage', { attempted, score,quizId: id,putCategory: category, category: 'Quiz History', questionDetails,totalQuestions: questionDetails.length, difficultyLevel: dif, questionType: opt.length===4? 'multichoice':'true&false', validate:val,durationHr:hr, durationMin:min  })
@@ -88,8 +83,6 @@ export default function QuizHistory({route, navigation}){
             setRenderedDetails(renderedDetails.filter((element)=>element.quizId !== id ))
             await FileSystem.writeAsStringAsync(`${FileSystem.documentDirectory}quizhistory.json`, JSON.stringify(fileContentArray.filter((element)=>element.quizId!=id)))
         })
-        // delOpacity.value = withSequence(withTiming(0, {duration:500}),withTiming(1, {duration:0}))
-        // shiftLeft.value = withSequence(withTiming(100, {duration: 500}), withTiming(0, {duration: 0}))
     }
     return(
         <View style={{flex:1, backgroundColor: myColor}}>

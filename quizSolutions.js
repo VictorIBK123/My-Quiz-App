@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { FlatList, Text, View,Pressable } from "react-native";
 import { TouchableOpacity } from "react-native";
 export default function QuizSolutions({route, navigation}){
-    const {quizId, setQuizId,background,setBackground, setMyColor, myColor} = useContext(myContext)
+    const {background, myColor} = useContext(myContext)
     const {details} = route.params;
     var attempted = 0
     if (route.params.fromWhere!=='history'){

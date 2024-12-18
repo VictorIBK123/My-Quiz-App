@@ -1,4 +1,4 @@
-import { Pressable, Text,TouchableOpacity,View } from "react-native";
+import { Alert, Pressable, Text,TouchableOpacity,View } from "react-native";
 import React, { useContext, useState,  } from "react";
 import { myContext } from "./myContext";
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -6,10 +6,9 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ActivityIndicator } from "react-native";
 import * as Progress from 'react-native-progress'
-import * as Network from 'expo-network'
 
 export default function QuizSettings({navigation, route}) {
-    const {quizId, setQuizId,allQuestionType, setAllQuestionType,allDifficultyLevel, setAllDifficultyLevel,allTotalQuestions, setallTotalQuestions,answerValidation,setAnswerValidation,background,setBackground, setMyColor, myColor,allDurationMin, setAllDurationMin,allDurationHr, setAllDurationHr } = useContext(myContext)
+    const {allQuestionType, allDifficultyLevel, allTotalQuestions, answerValidation,background,  myColor,allDurationMin,allDurationHr } = useContext(myContext)
     const [durationMin, setDurationMin] =useState(allDurationMin)
     const [durationHr, setDurationHr] =useState(allDurationHr)
     const [difficultyLevel, setDifficultyLevel] = useState(allDifficultyLevel)
@@ -65,24 +64,32 @@ export default function QuizSettings({navigation, route}) {
             const prompt = `Generate 5 total questions of categories ${route.params.innerCategoriesSelected} with difficulty level ${difficultyLevel} and type ${questionType} questions
         Note: that the total number of questions you generated is not less than 5 and not greater than 5`;
             var tempResult ;
-            var connectionInfo=0;
+            var networkError;
             if (route.params.category!='Quiz History'){
                 try {
                     for (var i=1; i<= parseInt(totalQuestions/5); i++){
-                        connectionInfo = await Network.getNetworkStateAsync()
                         tempResult  = await chat.sendMessage(prompt);
                         result = result.concat(JSON.parse(tempResult.response.text().replaceAll("```json\n","").replaceAll("\n```","")))
                         setProgress((5*i)/totalQuestions)
                     }
                 } catch (error) {
-                    
+                    if (error.message == '[GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: Network request failed'){
+                        networkError= true
+                    }
+                    else{
+                        networkError =false
+                    }
                     setDisableGenerateButt(false)
                 }
+                if (!networkError){
                 questionDetails = result
                 setDisableGenerateButt(false)
                 navigation.navigate('quizPage', {
                 category: route.params.category, subCategoriesSelected: route.params.subCategoriesSelected, innerCategoriesSelected: route.params.innerCategoriesSelected,questionDetails, totalQuestions, difficultyLevel, questionType, validate,durationHr, durationMin  
-            })
+            })}
+                else{
+                    Alert.alert("Network Error", "Please, connect to the internet", [{text:'Try Again'}])
+                }
             }
             else {
                 setDisableGenerateButt(false)
@@ -178,7 +185,7 @@ export default function QuizSettings({navigation, route}) {
                 setDurationMin(durationMin+5)
             }
         }
-        else if (action =='decrease' && (durationHr!==0 || durationMin!=0)){
+        else if (action =='decrease' && (durationHr!==0 || durationMin!=5)){
             if (durationMin==0){
                 setDurationHr(durationHr-1)
                 setDurationMin(55) 
@@ -340,6 +347,7 @@ export default function QuizSettings({navigation, route}) {
                 <Text style={{textAlign:'center',fontSize:18, color: background, opacity:  (()=>{return (disableGenerateButt? 0.5 : 1)})()}}>Generate Quiz Questions</Text>
                 {disableGenerateButt && <ActivityIndicator style={{position: 'absolute'}} color={'green'} size={50}/>}
             </Pressable>
+            <Text style={{color:myColor, paddingHorizontal:7, fontSize:11}}>Make sure you are connected to the internet.</Text>
             <Text style={{color:myColor, paddingHorizontal:7, fontSize:11}}>Note that the number of questions generated may not be complete because you are using a free version of gemini api.</Text>
             {disableGenerateButt && <View style={{flex: 2/10, justifyContent:'center', alignItems: 'center'}}>
                 <Progress.Bar progress={progress} color={myColor} unfilledColor="#ff4455" height={50} borderRadius={5} width={350} />

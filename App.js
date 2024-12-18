@@ -4,11 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react'
 import Home from './home';
 import TakeQuiz from './takeQuiz';
-import Multiplayer from './multiplayer';
 import { myContext } from './myContext';
-import Globally from './globally';
 import QuizHistory from './quizhistory';
-import Create from './create';
 import Settings from './settings';
 import About from './about';
 import QuizSettings from './quizsettings';
@@ -34,10 +31,9 @@ export default function App(){
   useEffect(()=>{
     (async()=>{
       try {
-        quizDataPerf = await AsyncStorage.getItem('quizDataPerformance')
-        quizDataPerf = JSON.parse(quizDataPerf)
         quizData = await AsyncStorage.getItem('quizdata')
         quizData = JSON.parse(quizData)
+        setOverallPerformance(quizData.perf)
         setBackground(quizData.background)
         setMyColor(quizData.myColor)
         setallTotalQuestions(quizData.allTotalQuestions)
@@ -47,13 +43,12 @@ export default function App(){
         setAllDurationHr(quizData.allDurationHr)
         setQuizId(quizData.quizId)
         setAnswerValidation(quizData.answerValidation)
-        setOverallPerformance(quizDataPerf.perf)
+        setOverallPerformance(quizData.perf)
       }
       catch(error){
-        await AsyncStorage.setItem('quizDataPerformance', JSON.stringify({perf: overallPerformance}))
         await AsyncStorage.setItem('quizdata', JSON.stringify({background: background, myColor: myColor, allTotalQuestions: allTotalQuestions, 
         allQuestionType: allQuestionType, allDifficultyLevel: allDifficultyLevel, allDurationMin: allDurationMin, 
-        allDurationHr: allDurationHr, quizId: quizId,answerValidation: answerValidation}))
+        allDurationHr: allDurationHr, quizId: quizId,answerValidation: answerValidation, perf: overallPerformance}))
       }
     })()
   },[])
@@ -61,10 +56,9 @@ export default function App(){
       (async()=>{
         await AsyncStorage.setItem('quizdata', JSON.stringify({background: background, myColor: myColor, allTotalQuestions: allTotalQuestions, 
           allQuestionType: allQuestionType, allDifficultyLevel: allDifficultyLevel, allDurationMin: allDurationMin, 
-          allDurationHr: allDurationHr, quizId: quizId,answerValidation: answerValidation}))
-        await AsyncStorage.setItem('quizDataPerformance', JSON.stringify({perf: overallPerformance}))
+          allDurationHr: allDurationHr, quizId: quizId,answerValidation: answerValidation, perf: overallPerformance}))
       })()
-    },[{overallPerformance, quizId,allQuestionType, allDifficultyLevel, allTotalQuestions, answerValidation,background, myColor, allDurationMin,allDurationHr}])
+    },[overallPerformance, quizId,allQuestionType, allDifficultyLevel, allTotalQuestions, answerValidation,background, myColor, allDurationMin,allDurationHr])
   return(
       <myContext.Provider value={{overallPerformance, setOverallPerformance, quizId, setQuizId,allQuestionType, setAllQuestionType,allDifficultyLevel, setAllDifficultyLevel,allTotalQuestions, setallTotalQuestions,answerValidation,setAnswerValidation,background, setBackground, myColor, setMyColor,allDurationMin, setAllDurationMin,allDurationHr, setAllDurationHr }}>
         <StatusBar backgroundColor={'black'}/>
@@ -72,9 +66,6 @@ export default function App(){
           <Stack.Navigator  screenOptions={{headerTitleAlign: 'center',headerStyle: {height: 60, backgroundColor: myColor}, headerTintColor: background}}>
             <Stack.Screen  component={Home} name='Quiz App' options={{title:'Home'}}  />
             <Stack.Screen component={TakeQuiz} name='Quiz' options={{title: 'Categories'}} />
-            <Stack.Screen component={Multiplayer} name='Multiplayer' />
-            <Stack.Screen component={Globally} name='Globally' options={{title: 'Participate Globally'}}/>
-            <Stack.Screen component={Create} name='Create' options={{title: 'Create Quiz'}} />
             <Stack.Screen component={Settings} name='Settings' />
             <Stack.Screen component={About} name='About' />
             <Stack.Screen component={QuizSettings} name='QuizSettings' options={{title: 'Quiz Settings'}}/>
@@ -85,6 +76,5 @@ export default function App(){
           </Stack.Navigator>
         </NavigationContainer>
       </myContext.Provider>
-    
   )
 }

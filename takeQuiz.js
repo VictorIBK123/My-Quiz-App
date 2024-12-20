@@ -10,7 +10,6 @@ import Feather from '@expo/vector-icons/Feather';
 import Animated,{useSharedValue, useAnimatedStyle, withTiming, withSpring} from "react-native-reanimated"
 import { Text, FlatList, View, TouchableOpacity, Dimensions, Image, Pressable, Alert} from "react-native"
 import { myContext } from "./myContext"
-import QuizHistory from "./quizhistory";
 export default function TakeQuiz ({navigation}){
     const proceedFunc =()=>{
         // to get the subCategories selected
@@ -79,7 +78,6 @@ export default function TakeQuiz ({navigation}){
     const move =()=>{
         posValue.value = withTiming(0,{duration:750})
     }
-    const innerCategoriesAnimatedStyle = useAnimatedStyle(()=>({height :`${high.value}%`,transform:[{scaleY: scaleY.value}]}))
     const subCategories=useAnimatedStyle(()=>({transform:[{translateY: posValue.value}]}))
     const {quizId, setQuizId,background,setBackground, setMyColor, myColor} = useContext(myContext)
     var i=0
@@ -90,8 +88,9 @@ export default function TakeQuiz ({navigation}){
         'History':require('./assets/history.jpg'),
         'Entertainment':require('./assets/entertainment.jpg'),
         'Religion': require('./assets/religion.jpg'),
-        "Economics":require('./assets/generalknowlege.png'),
-        "Quiz History": require('./assets/quizhistory.png')
+        "Economics":require('./assets/economics.jpg'),
+        "Quiz History": require('./assets/quizhistory.png'),
+        'Natural Languages': require('./assets/language.jpg')
     }
     const categorySelected =(category)=>{
         if (category=='Quiz History'){
@@ -101,7 +100,7 @@ export default function TakeQuiz ({navigation}){
             setCategory(category)
             setSubCategoriesData(Object.keys(data[category]))
             setIsMarked(Object.keys(data[category]).map(()=>(false)))
-            setFlatListSubCategoriesData(Object.keys(data[category]).map((element)=>{i+=1; return({value: element, key:i, isTrue: false})}))
+            setFlatListSubCategoriesData(Object.keys(data[category]).map((element)=>{i+=1; return({value: element, key:i.toString(), isTrue: false})}))
             setInnerCategoriesDataArray(Object.keys(data[category]).map((element, index)=>{
                 return(data[category][Object.keys(data[category])[index]].map((element)=>{
                     i+=1
@@ -147,21 +146,21 @@ export default function TakeQuiz ({navigation}){
                 data={flatListCategoriesData}
                 renderItem={({item})=>{
                     return (
-                    <Pressable android_ripple={{color:background,radius:1000,borderless:true, foreground:true }} disabled={isDisabled} onPress={()=>{categorySelected(item.value)}} style={{backgroundColor: myColor, flex: 1,height:170, margin:5, justifyContent: 'center', alignItems: 'center', borderRadius:8 }} >
-                        <Image source={imagesData[item.value]} style={{flex:1,height:'80%', width:'100%', resizeMode:'cover'}}/>
-                        <Text  style={{color: background, textTransform:'capitalize',fontSize: 17, fontWeight: 'bold'}}>{item.value}</Text>
-                    </Pressable>
+                        <Pressable android_ripple={{color:background,radius:1000,borderless:true, foreground:true }} disabled={isDisabled} onPress={()=>{categorySelected(item.value)}} style={{backgroundColor: myColor, flex: 1,height:170, margin:5, justifyContent: 'center', alignItems: 'center', borderRadius:8 }} >
+                            <Image source={imagesData[item.value]} style={{flex:1,height:'80%', width:'100%', resizeMode:'cover'}}/>
+                            <Text  style={{color: background, textTransform:'capitalize',fontSize: 17, fontWeight: 'bold'}}>{item.value}</Text>
+                        </Pressable>
                     )
                 }}
              />
             
             <Animated.View style={[{paddingVertical:10,paddingHorizontal: 8, justifyContent:'center', borderTopRightRadius:10, borderTopLeftRadius:10, alignSelf:'center', width:width,height:(90/100)*(height-60), position:'absolute', backgroundColor: myColor, bottom:0}, subCategories]}>
                 <GestureDetector gesture={gesture} ><View style={{flex:1/10}}><Text style={{marginTop:3,textAlign: 'center',color:background, paddingHorizontal:8, textTransform: 'capitalize', fontSize: 18}}>SubCategories</Text></View></GestureDetector>
-                <View style={{flex:8.3/10}}><FlatList
+                <View style={{flex:8.3/10}}>
+                    <FlatList
                     data={flstListSubCategoriesData}
                     style={{flex:9/10}}
-                    nestedScrollEnabled={true}
-                    contentContainerStyle={{paddingBottom: 10}}
+                    initialNumToRender={10}
                     renderItem={({item,index })=>{
                         var show = item.isTrue
                         return (
@@ -172,10 +171,9 @@ export default function TakeQuiz ({navigation}){
                                     <Text style={{color:background, paddingHorizontal:8, textTransform: 'capitalize', fontSize: 15}}>{item.value}</Text>
                                 </TouchableOpacity>
                                 <View>
-                                    <FlatList
+                                    {show && <FlatList
                                         data ={innerCategoriesDataArray[index]}
                                         renderItem={({item})=>{
-                                            if (show){
                                                 return (
                                                     <TouchableOpacity onPress={()=>{innerCategoryHandler(item.key)}}  style={{marginLeft:20, flexDirection: 'row', alignItems: 'center'}}>
                                                         {item.isTrue && <FontAwesome5 name="check-square" size={17}
@@ -184,9 +182,9 @@ export default function TakeQuiz ({navigation}){
                                                         <Text style={{color:background, paddingLeft:15, textTransform: 'capitalize', fontSize: 15}}>{item.value}</Text>
                                                     </TouchableOpacity>
                                                 )
-                                            }}
+                                            }
                                         }
-                                    />
+                                    />}
                                     
                                 </View>
                             </View>

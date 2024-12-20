@@ -1,5 +1,6 @@
 // import './gesture-handler';// compulspry at the entry point
 import { NavigationContainer } from '@react-navigation/native';
+import * as SplashScreen from 'expo-splash-screen'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react'
 import Home from './home';
@@ -27,7 +28,16 @@ export default function App(){
   const [answerValidation, setAnswerValidation] =useState('all')
   const [overallPerformance, setOverallPerformance] = useState('None')
   var quizData;
-  var quizDataPerf;
+  useEffect(() => {
+    // Prevent splash screen from auto-hiding
+    SplashScreen.preventAutoHideAsync()
+
+    // Simulate some loading
+    setTimeout(() => {
+      // Hide the splash screen when ready
+    SplashScreen.hideAsync()
+    }, 3000); // Show splash screen for 3 seconds
+  }, []);
   useEffect(()=>{
     (async()=>{
       try {

@@ -62,7 +62,7 @@ export default function QuizSolutions({route, navigation}){
                             <View>
                             <FlatList
                                  style={{marginTop:10, marginLeft:20}}
-                                 data={item.options.map((element)=>{i+=1;return({value: element, key:i, chosenOne: item.chosen, answer: item.answer})})}
+                                 data={item.options.map((element)=>{i+=1;return({value: element, key:i.toString(), chosenOne: item.chosen, answer: item.answer})})}
                                  renderItem={({item, index})=>(
                                      <View style={{flexDirection:'row', alignItems:'center', margin:3, paddingLeft:20}}>
                                          {(()=>{

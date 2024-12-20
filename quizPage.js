@@ -64,9 +64,7 @@ export default function QuizPage({navigation, route}){
                 await FileSystem.writeAsStringAsync(url, JSON.stringify(contentToStore))
             }
             else if (info.exists){
-                console.log('file exists')
                 content = await FileSystem.readAsStringAsync(url)
-                console.log(route.params.durationMin)
                 // joins data read from file with new questions (data) generated
                 content = JSON.parse(content).concat(questionsDetails.map((element, index)=>{
                     return({...element, 'chosen':-1, onQuestion: false, verified: false, quizId:quizId+1, score,attempted: 1, scategory: route.params.category, validate: route.params.validate==='each'? 'each':'all', durationHr: route.params.durationHr, durationMin: route.params.durationMin})
@@ -79,7 +77,6 @@ export default function QuizPage({navigation, route}){
                 toWrite = JSON.stringify(questionsDetails.map((element, index)=>{
                         return({...element, 'chosen':-1, onQuestion: false, verified: false, quizId: quizId+1, score,attempted:1, scategory: route.params.category, validate: route.params.validate==='each'? 'each':'all', durationHr: route.params.durationHr, durationMin: route.params.durationMin})
                 }))
-                console.log(toWrite)
                 await FileSystem.writeAsStringAsync(url, toWrite)
                 setQuizId(quizId+1)
             }
@@ -187,8 +184,7 @@ export default function QuizPage({navigation, route}){
                     tempScore+=1
                 }
                 setScore(tempScore)
-                setOverallPerformance(overallPerformance!=='None'? ((overallPerformance + (tempScore* 100/questionsDetails.length))/2): tempScore*100/questionsDetails.length)
-                console.log(overallPerformance!=='None'? ((overallPerformance + (tempScore* 100/questionsDetails.length))/2): tempScore*100/questionsDetails.length)
+                setOverallPerformance(overallPerformance!=='None'? ((overallPerformance + (tempScore* 100/questionsDetails.length))/2).toFixed(3): (tempScore*100/questionsDetails.length).toFixed(2))
             })
             setQuizSubmitted(true)
             navigation.setOptions({headerRight: ()=>null})
@@ -205,8 +201,7 @@ export default function QuizPage({navigation, route}){
             questionsDetails.forEach((element)=>{
                 if (element['answer'] === element['chosen']){
                     setScore(score+1)
-                    setOverallPerformance(overallPerformance!=='None'? ((overallPerformance + (tempScore* 100/questionsDetails.length))/2): tempScore*100/questionsDetails.length)
-                    console.log(overallPerformance!=='None'? ((overallPerformance + (tempScore* 100/questionsDetails.length))/2): tempScore*100/questionsDetails.length)
+                    setOverallPerformance(overallPerformance!=='None'? ((overallPerformance + (tempScore* 100/questionsDetails.length))/2).toFixed(2): (tempScore*100/questionsDetails.length).toFixed(2))
                 }
             })
             setQuizSubmitted(true)
